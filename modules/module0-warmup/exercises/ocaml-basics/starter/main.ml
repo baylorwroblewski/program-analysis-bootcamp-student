@@ -19,17 +19,17 @@
 (** [square x] returns x * x. *)
 let square (_x : int) : int =
   (* EXERCISE: return the square of _x *)
-  failwith "TODO: square"
+  _x * _x
 
 (** [is_empty s] returns true if the string [s] has length 0. *)
 let is_empty (_s : string) : bool =
   (* EXERCISE: check if the string is empty *)
-  failwith "TODO: is_empty"
+  String.length _s = 0
 
 (** [greet name] returns the string "Hello, <name>!". *)
 let greet (_name : string) : string =
   (* EXERCISE: use string concatenation (^) or Printf.sprintf *)
-  failwith "TODO: greet"
+"Hello, " ^ _name ^ "!"
 
 (* ----------------------------------------------------------------
    Part 2: Character Classification
@@ -41,14 +41,16 @@ let greet (_name : string) : string =
 (** [is_digit c] returns true if c is '0'..'9'. *)
 let is_digit (_c : char) : bool =
   (* EXERCISE: use comparison operators on chars *)
-  failwith "TODO: is_digit"
+  _c >= '0' && _c <= '9'
 [@@warning "-32"]
 
 (** [is_alpha c] returns true if c is 'a'..'z' or 'A'..'Z' or '_'. *)
 let is_alpha (_c : char) : bool =
   (* EXERCISE: check all three ranges *)
-  failwith "TODO: is_alpha"
-[@@warning "-32"]
+  (_c >= 'a' && _c <= 'z') ||
+  (_c >= 'A' && _c <= 'Z') ||
+  (_c = '_')
+  [@@warning "-32"]
 
 (** [classify_char c] returns a string describing the character:
     - "digit"    if c is '0'..'9'
@@ -57,7 +59,10 @@ let is_alpha (_c : char) : bool =
     - "unknown"  otherwise *)
 let classify_char (_c : char) : string =
   (* EXERCISE: use the functions above + pattern matching or if/else *)
-  failwith "TODO: classify_char"
+  if is_digit _c then "digit"
+  else if is_alpha _c then "alpha"
+  else if _c = '+' || _c = '-' || _c = '*' || _c = '/' then "operator"
+  else "unknown"
 
 (* ----------------------------------------------------------------
    Part 3: Token Types and Formatting
@@ -71,9 +76,10 @@ type token = string * string
 
 (** [format_token tok] returns a string like "[keyword: if]".
     Given token ("keyword", "if"), return "[keyword: if]". *)
+
 let format_token ((_cat, _text) : token) : string =
   (* EXERCISE: use Printf.sprintf or string concatenation *)
-  failwith "TODO: format_token"
+  Printf.sprintf "[%s: %s]" _cat _text
 
 (** [make_token text] creates a token by classifying the first
     character of [text]:
@@ -83,8 +89,13 @@ let format_token ((_cat, _text) : token) : string =
     - otherwise return ("symbol", text) *)
 let make_token (_text : string) : token =
   (* EXERCISE: use String.length, text.[0], and your classifier *)
-  failwith "TODO: make_token"
-
+  if String.length _text = 0 then
+    ("empty", "")
+  else
+    let first = _text.[0] in
+    if is_digit first then ("number", _text)
+    else if is_alpha first then ("identifier", _text)
+    else ("symbol", _text)
 (* ----------------------------------------------------------------
    Part 4: Positions (Tuples)
 
@@ -97,14 +108,15 @@ type pos = int * int
 (** [format_pos p] returns a string like "line 1, col 5". *)
 let format_pos ((_line, _col) : pos) : string =
   (* EXERCISE: use Printf.sprintf *)
-  failwith "TODO: format_pos"
+  Printf.sprintf "line %d, col %d" _line _col
 
 (** [advance_pos p c] returns a new position after reading char [c]:
     - if c is '\n', move to the next line (line+1, col 1)
     - otherwise, stay on the same line (line, col+1) *)
 let advance_pos ((_line, _col) : pos) (_c : char) : pos =
   (* EXERCISE: pattern match or use if/then/else on c *)
-  failwith "TODO: advance_pos"
+  if _c = '\n' then (_line + 1, 1)
+  else (_line, _col + 1)
 
 (** [scan_positions s] folds over the characters in [s], starting
     at position (1, 1), advancing with each character, and returns
