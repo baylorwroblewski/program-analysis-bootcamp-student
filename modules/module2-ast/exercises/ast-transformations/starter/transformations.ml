@@ -27,9 +27,40 @@ open Shared_ast.Ast_types
                                                 --> IntLit 8
      BinOp(Add, Var "x", IntLit 1)            --> BinOp(Add, Var "x", IntLit 1)
 *)
-let constant_fold (_expr : expr) : expr =
-  (* TODO *)
-  failwith "TODO"
+let rec constant_fold (_expr : expr) : expr =
+  match _expr with
+  | IntLit _ | BoolLit _ | Var _ -> _expr
+
+  | UnaryOp (op, e) ->
+      let e' = constant_fold e in
+      (match (op, e') with
+       | Neg, IntLit n -> IntLit (-n)
+       | Not, BoolLit b -> BoolLit (not b)
+       | _ -> UnaryOp (op, e'))
+
+  | BinOp (op, e1, e2) ->
+      let e1' = constant_fold e1 in
+      let e2' = constant_fold e2 in
+      (match (op, e1', e2') with
+       | Add, IntLit a, IntLit b -> IntLit (a + b)
+       | Sub, IntLit a, IntLit b -> IntLit (a - b)
+       | Mul, IntLit a, IntLit b -> IntLit (a * b)
+       | Div, IntLit a, IntLit b -> IntLit (a / b)
+
+       | Eq,  IntLit a, IntLit b -> BoolLit (a = b)
+       | Neq, IntLit a, IntLit b -> BoolLit (a <> b)
+       | Lt,  IntLit a, IntLit b -> BoolLit (a < b)
+       | Gt,  IntLit a, IntLit b -> BoolLit (a > b)
+       | Le,  IntLit a, IntLit b -> BoolLit (a <= b)
+       | Ge,  IntLit a, IntLit b -> BoolLit (a >= b)
+
+       | And, BoolLit a, BoolLit b -> BoolLit (a && b)
+       | Or,  BoolLit a, BoolLit b -> BoolLit (a || b)
+
+       | _ -> BinOp (op, e1', e2'))
+
+  | Call (name, args) ->
+      Call (name, List.map constant_fold args)
 
 (* --------------------------------------------------------------------------
    2. Variable renaming
@@ -50,8 +81,45 @@ let constant_fold (_expr : expr) : expr =
 *)
 let rename_variable (_old_name : string) (_new_name : string)
     (_stmts : stmt list) : stmt list =
-  (* TODO *)
-  failwith "TODO"
+  let rec rename_expr e =
+    match e with
+    | Var s ->
+        if s = _old_name then Var _new_name else e
+    | IntLit _ | BoolLit _ -> e
+    | UnaryOp (op, e1) ->
+        UnaryOp (op, rename_expr e1)
+    | BinOp (op, e1, e2) ->
+        BinOp (op, rename_expr e1, rename_expr e2)
+    | Call (name, args) ->
+        Call (name, List.map rename_expr args)
+  in
+  let rec rename_stmt s =
+    match s with
+    | Assign (v, e) ->
+        let v' = if v = _old_name then _new_name else v in
+        Assign (v', rename_expr e)
+
+    | If (cond, then_b, else_b) ->
+        If (rename_expr cond,
+            List.map rename_stmt then_b,
+            List.map rename_stmt else_b)
+
+    | While (cond, body) ->
+        While (rename_expr cond,
+               List.map rename_stmt body)
+
+    | Return None -> s
+
+    | Return (Some e) ->
+        Return (Some (rename_expr e))
+
+    | Print exprs ->
+        Print (List.map rename_expr exprs)
+
+    | Block stmts ->
+        Block (List.map rename_stmt stmts)
+  in
+  List.map rename_stmt _stmts
 
 (* --------------------------------------------------------------------------
    3. Dead-code elimination
@@ -75,5 +143,32 @@ let rename_variable (_old_name : string) (_new_name : string)
      [Return (Some (IntLit 42))]
 *)
 let eliminate_dead_code (_stmts : stmt list) : stmt list =
-  (* TODO *)
-  failwith "TODO"
+  let rec process stmts =
+    match stmts with
+    | [] -> []
+
+    | s :: rest ->
+        let s' =
+          match s with
+          | If (BoolLit true, then_b, _) ->
+              Block (process then_b)
+
+          | If (BoolLit false, _, else_b) ->
+              Block (process else_b)
+
+          | If (cond, then_b, else_b) ->
+              If (cond, process then_b, process else_b)
+
+          | While (cond, body) ->
+              While (cond, process body)
+
+          | Block stmts ->
+              Block (process stmts)
+
+          | _ -> s
+        in
+        match s' with
+        | Return _ -> [s']
+        | _ -> s' :: process rest
+  in
+  process _stmts

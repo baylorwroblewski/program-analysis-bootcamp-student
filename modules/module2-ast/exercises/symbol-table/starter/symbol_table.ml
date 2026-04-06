@@ -24,24 +24,35 @@ type t = symbol_info StringMap.t list
 
 let create () : t =
   (* TODO: return a table with a single empty scope *)
-  failwith "TODO"
+  [StringMap.empty]
 
 let define (tbl : t) (_name : string) (_info : symbol_info) : t =
   (* TODO: add the binding to the innermost (head) scope *)
-  ignore tbl;
-  failwith "TODO"
+  match tbl with
+  | [] -> tbl
+  | scope :: rest ->
+      let updated_scope = StringMap.add _name _info scope in
+      updated_scope :: rest
 
 let lookup (tbl : t) (_name : string) : symbol_info option =
   (* TODO: search from innermost scope outward; return first match *)
-  ignore tbl;
-  failwith "TODO"
+  let rec search scopes =
+    match scopes with
+    | [] -> None
+    | scope :: rest ->
+        (match StringMap.find_opt _name scope with
+         | Some info -> Some info
+         | None -> search rest)
+  in
+  search tbl
 
 let enter_scope (tbl : t) : t =
   (* TODO: push a new empty scope onto the front of the list *)
-  ignore tbl;
-  failwith "TODO"
+  StringMap.empty :: tbl
 
 let exit_scope (tbl : t) : t option =
   (* TODO: pop the innermost scope; return None if only one scope remains *)
-  ignore tbl;
-  failwith "TODO"
+  match tbl with
+  | [] -> None
+  | [_] -> None
+  | _ :: rest -> Some rest

@@ -20,17 +20,20 @@
 (** [double_all xs] returns a new list with every element doubled.
     Example: double_all [1; 2; 3] = [2; 4; 6] *)
 let double_all (_xs : int list) : int list =
-  List.map (fun x -> x * 2) _xs
+  (* EXERCISE: use List.map *)
+  failwith "TODO: double_all"
 
 (** [keep_positive xs] returns only the positive elements.
     Example: keep_positive [-1; 3; 0; 5; -2] = [3; 5] *)
 let keep_positive (_xs : int list) : int list =
-  List.filter (fun x -> x > 0) _xs
+  (* EXERCISE: use List.filter *)
+  failwith "TODO: keep_positive"
 
 (** [sum xs] returns the sum of all elements.
     Example: sum [1; 2; 3; 4] = 10 *)
 let sum (_xs : int list) : int =
-  List.fold_left (fun acc x -> acc + x) 0 _xs
+  (* EXERCISE: use List.fold_left *)
+  failwith "TODO: sum"
 
 (** [has_duplicates xs] returns true if any string appears more
     than once in [xs].
@@ -40,8 +43,9 @@ let has_duplicates (xs : string list) : bool =
   let check = function
     | [] | [_] -> false
     | _a :: _b :: _rest ->
-        if a = b then true
-        else check (b :: rest)
+      (* EXERCISE: if a = b, return true; else recurse on (b :: rest)
+         Hint: add [rec] to check when ready *)
+      failwith "TODO: has_duplicates"
   in
   check sorted
 

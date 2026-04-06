@@ -53,9 +53,8 @@ module BoolPrint = struct
   (** [to_string b] converts a bool to "T" or "F". *)
   let to_string (b : bool) : string =
     (* EXERCISE: return "T" if b is true, "F" if false *)
-    ignore b;
-    failwith "TODO: BoolPrint.to_string"
-end
+    if b then "T" else "F"
+    end
 
 (* ----------------------------------------------------------------
    Part 3: A Three-Value Lattice
@@ -89,20 +88,25 @@ module ThreeValueLattice : LATTICE with type t = three_value = struct
       - join _ _ = Unknown  (all other cases) *)
   let join (a : t) (b : t) : t =
     (* EXERCISE: handle same-value, Bot, and default cases *)
-    ignore a; ignore b;
-    failwith "TODO: ThreeValueLattice.join"
+    if a = b then a
+    else
+      match (a, b) with
+      | Bot, x | x, Bot -> x
+      | _ -> Unknown
 
   (** [equal a b] returns true if a and b are the same variant. *)
   let equal (a : t) (b : t) : bool =
     (* EXERCISE: use structural equality (=) *)
-    ignore a; ignore b;
-    failwith "TODO: ThreeValueLattice.equal"
+    a = b
 
   (** [to_string v] returns "Bot", "Zero", "Positive", or "Unknown". *)
   let to_string (v : t) : string =
     (* EXERCISE: pattern match on all four cases *)
-    ignore v;
-    failwith "TODO: ThreeValueLattice.to_string"
+    match v with
+    | Bot -> "Bot"
+    | Zero -> "Zero"
+    | Positive -> "Positive"
+    | Unknown -> "Unknown"
 end
 
 (* ----------------------------------------------------------------
@@ -128,15 +132,15 @@ module MakeEnv (L : LATTICE) = struct
       or [L.bottom] if [x] is not in the environment. *)
   let lookup (env : t) (x : string) : L.t =
     (* EXERCISE: use M.find_opt, return L.bottom for None *)
-    ignore env; ignore x;
-    failwith "TODO: MakeEnv.lookup"
+    match M.find_opt x env with
+    | Some v -> v
+    | None -> L.bottom
 
   (** [update env x v] returns a new environment with [x] mapped
       to [v]. *)
   let update (env : t) (x : string) (v : L.t) : t =
     (* EXERCISE: use M.add *)
-    ignore env; ignore x; ignore v;
-    failwith "TODO: MakeEnv.update"
+    M.add x v env
 
   (** [join env1 env2] merges two environments by joining values
       for each variable that appears in either.
@@ -145,8 +149,10 @@ module MakeEnv (L : LATTICE) = struct
         (key -> v1 -> v2 -> Some merged_value) *)
   let join (env1 : t) (env2 : t) : t =
     (* EXERCISE: use M.union with L.join *)
-    ignore env1; ignore env2;
-    failwith "TODO: MakeEnv.join"
+    M.union 
+      (fun _ v1 v2 -> Some (L.join v1 v2))
+      env1
+      env2
 
   (** [to_string env] returns a string like "{x -> Zero, y -> Positive}". *)
   let to_string (env : t) : string =
