@@ -39,8 +39,10 @@ type expr =
 
 (** [string_of_op op] returns "+", "-", or "*". *)
 let string_of_op (_o : op) : string =
-  (* EXERCISE: pattern match on the three op cases *)
-  failwith "TODO: string_of_op"
+  match _o with
+  | Add -> "+"
+  | Sub -> "-"
+  | Mul -> "*"
 [@@warning "-32"]
 
 (** [string_of_expr e] returns a fully parenthesized string.
@@ -48,10 +50,15 @@ let string_of_op (_o : op) : string =
       Num 3           --> "3"
       Var "x"         --> "x"
       BinOp(Add, Num 1, Var "x")  --> "(1 + x)" *)
-let string_of_expr (_e : expr) : string =
+let rec string_of_expr (_e : expr) : string =
   (* EXERCISE: pattern match on Num, Var, BinOp
      Hint: this function needs to be recursive -- add [rec] when ready *)
-  failwith "TODO: string_of_expr"
+  match _e with
+  | Num n -> string_of_int n
+  | Var x -> x
+  | BinOp (o, l, r) ->
+      "(" ^ string_of_expr l ^ " " ^ string_of_op o ^ " " ^ string_of_expr r ^ ")"
+
 
 (* ----------------------------------------------------------------
    Part 3: Tree Metrics
@@ -59,15 +66,22 @@ let string_of_expr (_e : expr) : string =
 
 (** [count_nodes e] returns the total number of nodes in the tree.
     Num and Var are 1 node each. BinOp is 1 + left + right. *)
-let count_nodes (_e : expr) : int =
+let rec count_nodes (_e : expr) : int =
   (* EXERCISE: recursive pattern match -- add [rec] when ready *)
-  failwith "TODO: count_nodes"
+  match _e with
+  | Num _ -> 1
+  | Var _ -> 1
+  | BinOp (_, l, r) -> 1 + count_nodes l + count_nodes r
 
 (** [depth e] returns the depth of the tree (Num/Var = 1,
     BinOp = 1 + max of children). *)
-let depth (_e : expr) : int =
+let rec depth (_e : expr) : int =
   (* EXERCISE: recursive pattern match, use max -- add [rec] when ready *)
-  failwith "TODO: depth"
+  match _e with
+  | Num _ -> 1
+  | Var _ -> 1
+  | BinOp (_, l, r) -> 1 + max (depth l) (depth r)
+
 
 (* ----------------------------------------------------------------
    Part 4: Evaluation with Option
@@ -88,9 +102,19 @@ let depth (_e : expr) : int =
 
     Hint: use [match eval left, eval right with]
     to evaluate both sides, then pattern match on the pair. *)
-let eval (_e : expr) : int option =
+let rec eval (_e : expr) : int option =
   (* EXERCISE: handle Num, Var, and BinOp -- add [rec] when ready *)
-  failwith "TODO: eval"
+  match _e with
+  | Num n -> Some n
+  | Var _ -> None
+  | BinOp (o, l, r) ->
+      match eval l, eval r with
+      | Some x, Some y ->
+          (match o with
+           | Add -> Some (x + y)
+           | Sub -> Some (x - y)
+           | Mul -> Some (x * y))
+      | _ -> None
 
 (* ----------------------------------------------------------------
    Part 5: Tree Transformations
@@ -101,40 +125,60 @@ let eval (_e : expr) : int option =
 
     Example: substitute "x" 5 (BinOp(Add, Var "x", Num 1))
              --> BinOp(Add, Num 5, Num 1) *)
-let substitute (_var_name : string) (_value : int) (_e : expr) : expr =
+let rec substitute (_var_name : string) (_value : int) (_e : expr) : expr =
   (* EXERCISE: pattern match; for Var, check if name matches
      Hint: add [rec] when ready *)
-  failwith "TODO: substitute"
+  match _e with
+  | Num _ -> _e
+  | Var x -> if x = _var_name then Num _value else _e
+  | BinOp (o, l, r) ->
+      BinOp (o, substitute _var_name _value l, substitute _var_name _value r)
+
 
 (** [vars_in e] returns a sorted, deduplicated list of all variable
     names appearing in [e].
 
     Hint: collect into a list, then use List.sort_uniq. *)
 let vars_in (_e : expr) : string list =
-  let collect (_e : expr) : string list =
+  let rec collect (_e : expr) : string list =
     (* EXERCISE: Num -> [], Var name -> [name], BinOp -> left @ right
        Hint: add [rec] to collect when ready *)
-    failwith "TODO: vars_in"
+    match _e with
+    | Num _ -> []
+    | Var x -> [x]
+    | BinOp (_, l, r) -> collect l @ collect r
   in
   List.sort_uniq String.compare (collect _e)
 
 (** [is_constant e] returns true if [e] contains no Var nodes. *)
 let is_constant (_e : expr) : bool =
   (* EXERCISE: use vars_in or write a direct recursive check *)
-  failwith "TODO: is_constant"
+  vars_in _e = []
 
 (** [simplify e] performs constant folding: if a BinOp has two Num
     children, replace it with the computed Num.
     Apply recursively (simplify children first, then check).
 
     Example: BinOp(Add, Num 2, Num 3) --> Num 5 *)
-let simplify (_e : expr) : expr =
+let rec simplify (_e : expr) : expr =
   (* EXERCISE: add [rec] when ready.
      Match on Num/Var (return as-is) and BinOp:
        1. Simplify both children first
        2. If both are Num, compute the result
        3. Otherwise return BinOp(o, left', right') *)
-  failwith "TODO: simplify"
+  match _e with
+  | Num _ -> _e
+  | Var _ -> _e
+  | BinOp (o, l, r) ->
+      let l' = simplify l in
+      let r' = simplify r in
+      match l', r' with
+      | Num x, Num y ->
+          (match o with
+           | Add -> Num (x + y)
+           | Sub -> Num (x - y)
+           | Mul -> Num (x * y))
+      | _ -> BinOp (o, l', r')
 
 (* ================================================================
    Main -- runs all exercises and prints results.

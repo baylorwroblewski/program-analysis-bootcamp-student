@@ -51,7 +51,7 @@ let is_alpha (_c : char) : bool =
   (_c >= 'A' && _c <= 'Z') ||
   (_c = '_')
   [@@warning "-32"]
-
+  
 (** [classify_char c] returns a string describing the character:
     - "digit"    if c is '0'..'9'
     - "alpha"    if c is a letter or underscore

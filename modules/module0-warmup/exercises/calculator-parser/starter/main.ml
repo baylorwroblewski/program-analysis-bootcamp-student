@@ -21,7 +21,11 @@ open Ast
 (** [string_of_op op] returns "+", "-", "*", or "/". *)
 let string_of_op (_o : op) : string =
   (* EXERCISE: pattern match on Add, Sub, Mul, Div *)
-  failwith "TODO: string_of_op"
+  match _o with
+  | Add -> "+"
+  | Sub -> "-"
+  | Mul -> "*"
+  | Div -> "/"
 [@@warning "-32"]
 
 (** [string_of_expr e] returns a fully parenthesized string.
@@ -30,10 +34,15 @@ let string_of_op (_o : op) : string =
       Var "x"          --> "x"
       Neg (Num 5)      --> "(- 5)"
       BinOp(Add, Num 1, Num 2)  --> "(1 + 2)" *)
-let string_of_expr (_e : expr) : string =
-  (* EXERCISE: pattern match on Num, Var, Neg, BinOp
-     Hint: add [rec] when ready *)
-  failwith "TODO: string_of_expr"
+let rec string_of_expr (e : expr) : string =
+  match e with
+  | Num n -> string_of_int n
+  | Var x -> x
+  | Neg e1 -> "(- " ^ string_of_expr e1 ^ ")"
+  | BinOp (op, e1, e2) ->
+      "(" ^ string_of_expr e1 ^ " "
+      ^ string_of_op op ^ " "
+      ^ string_of_expr e2 ^ ")"
 
 (* ----------------------------------------------------------------
    Part 2: Evaluation
@@ -42,12 +51,25 @@ let string_of_expr (_e : expr) : string =
 (** [eval e] evaluates [e] if it contains no variables.
     Returns [Some n] on success, [None] if a Var is encountered.
     Division by zero returns [None]. *)
-let eval (_e : expr) : int option =
-  (* EXERCISE: handle Num, Var, Neg, and BinOp.
-     For BinOp: evaluate both sides; if both are Some, compute.
-     For Div: check for zero denominator.
-     Hint: add [rec] when ready *)
-  failwith "TODO: eval"
+let rec eval (_e : expr) : int option =
+  match _e with
+  | Num n -> Some n
+  | Var _ -> None
+  | Neg e1 ->
+      (match eval e1 with
+       | Some n -> Some (-n)
+       | None -> None)
+  | BinOp (op, e1, e2) ->
+      (match eval e1, eval e2 with
+       | Some n1, Some n2 ->
+           (match op with
+            | Add -> Some (n1 + n2)
+            | Sub -> Some (n1 - n2)
+            | Mul -> Some (n1 * n2)
+            | Div ->
+                if n2 = 0 then None
+                else Some (n1 / n2))
+       | _ -> None)
 
 (* ----------------------------------------------------------------
    Provided: Parse helper and main driver
