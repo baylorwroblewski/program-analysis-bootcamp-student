@@ -37,9 +37,9 @@ let sum (_xs : int list) : int =
     Hint: sort first, then check adjacent elements. *)
 let has_duplicates (xs : string list) : bool =
   let sorted = List.sort String.compare xs in
-  let check = function
+  let rec check = function
     | [] | [_] -> false
-    | _a :: _b :: _rest ->
+    | a :: b :: rest ->
         if a = b then true
         else check (b :: rest)
   in
@@ -62,18 +62,23 @@ type assignment = {
 (** [make_assign name value line] creates an assignment record. *)
 let make_assign (_name : string) (_value : int) (_line : int) : assignment =
   (* EXERCISE: construct the record *)
-  failwith "TODO: make_assign"
+  {
+    var_name = _name;
+    value = _value;
+    line = _line;
+  }
 
 (** [format_assign a] returns "x = 5 (line 3)". *)
 let format_assign (_a : assignment) : string =
   (* EXERCISE: use Printf.sprintf and record field access *)
-  failwith "TODO: format_assign"
+  Printf.sprintf "%s = %d (line %d)"
+    _a.var_name _a.value _a.line
 
 (** [increment_value a n] returns a new record with value increased
     by [n]. Records are immutable -- use { a with ... } syntax. *)
 let increment_value (_a : assignment) (_n : int) : assignment =
   (* EXERCISE: use the { ... with ... } record update syntax *)
-  failwith "TODO: increment_value"
+  { _a with value = _a.value + _n }
 
 (* ----------------------------------------------------------------
    Part 3: StringMap -- Variable Environments
@@ -90,13 +95,16 @@ module StringMap = Map.Make(String)
     Example: build_env [("x", 1); ("y", 2)] builds {x->1, y->2} *)
 let build_env (_pairs : (string * int) list) : int StringMap.t =
   (* EXERCISE: use List.fold_left and StringMap.add *)
-  failwith "TODO: build_env"
+  List.fold_left
+    (fun env (name, value) -> StringMap.add name value env)
+    StringMap.empty
+    _pairs
 
 (** [lookup_var env name] returns Some value if [name] is in [env],
     or None otherwise. *)
 let lookup_var (_env : int StringMap.t) (_name : string) : int option =
   (* EXERCISE: use StringMap.find_opt *)
-  failwith "TODO: lookup_var"
+  StringMap.find_opt _name _env
 
 (** [all_vars env] returns a sorted list of all variable names in
     the environment.
@@ -104,7 +112,7 @@ let lookup_var (_env : int StringMap.t) (_name : string) : int option =
     Hint: StringMap.bindings returns a (key * value) list. *)
 let all_vars (_env : int StringMap.t) : string list =
   (* EXERCISE: extract keys from StringMap.bindings *)
-  failwith "TODO: all_vars"
+  List.map fst (StringMap.bindings _env)
 
 (* ----------------------------------------------------------------
    Part 4: StringSet -- Tracking Variable Sets
@@ -119,12 +127,15 @@ module StringSet = Set.Make(String)
     names that appear in the assignment list. *)
 let assigned_vars (_assignments : assignment list) : StringSet.t =
   (* EXERCISE: use List.fold_left and StringSet.add *)
-  failwith "TODO: assigned_vars"
+  List.fold_left
+    (fun set a -> StringSet.add a.var_name set)
+    StringSet.empty
+    _assignments
 
 (** [common_vars s1 s2] returns the intersection of two StringSets. *)
 let common_vars (_s1 : StringSet.t) (_s2 : StringSet.t) : StringSet.t =
   (* EXERCISE: use StringSet.inter *)
-  failwith "TODO: common_vars"
+  StringSet.inter _s1 _s2
 
 (* ----------------------------------------------------------------
    Part 5: Mutable State (ref)
@@ -147,7 +158,11 @@ let common_vars (_s1 : StringSet.t) (_s2 : StringSet.t) : StringSet.t =
     that increments and returns its value. *)
 let make_counter () : unit -> int =
   (* EXERCISE: use a ref cell *)
-  failwith "TODO: make_counter"
+  let counter = ref 0 in
+  fun () ->
+    let current = !counter in
+    counter := !counter + 1;
+    current
 
 (* ================================================================
    Main -- runs all exercises and prints results.
