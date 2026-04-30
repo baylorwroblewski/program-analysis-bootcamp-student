@@ -131,12 +131,11 @@ let post_order (_stmts : stmt list) : string list =
       3. Repeat until the queue is empty.
     You will need a sum type or two queues to handle both stmt and expr
     nodes uniformly. *)
+type node =
+  | S of stmt
+  | E of expr
+
 let bfs (_stmts : stmt list) : string list =
-  (* TODO: implement breadth-first traversal using Queue *)
-  type node =
-    | S of stmt
-    | E of expr
-  in
   let q = Queue.create () in
   List.iter (fun s -> Queue.add (S s) q) _stmts;
 
