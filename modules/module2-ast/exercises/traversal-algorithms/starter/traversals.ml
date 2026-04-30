@@ -12,6 +12,26 @@
 
 open Shared_ast.Ast_types
 
+let string_of_op op =
+  match op with
+  | Add -> "+"
+  | Sub -> "-"
+  | Mul -> "*"
+  | Div -> "/"
+  | Eq -> "=="
+  | Neq -> "!="
+  | Lt -> "<"
+  | Le -> "<="
+  | Gt -> ">"
+  | Ge -> ">="
+  | And -> "&&"
+  | Or -> "||"
+
+let string_of_uop op =
+  match op with
+  | Neg -> "-"
+  | Not -> "!"
+
 (** Helper: produce a string label for a single expression node.
     Examples: IntLit(3), BoolLit(true), Var(x), BinOp(+), UnaryOp(-), Call(f) *)
 let label_of_expr (_e : expr) : string =

@@ -111,5 +111,9 @@ let rec evaluate (_e : expr) : int option =
                 if v2 = 0 then None else Some (v1 / v2)
             | _ -> None)
        | _ -> None)
+  | UnaryOp (Neg, e1) ->
+      (match evaluate e1 with
+       | Some v -> Some (-v)
+       | None -> None)
 
   | _ -> None
