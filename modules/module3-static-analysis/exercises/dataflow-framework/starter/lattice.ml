@@ -57,15 +57,22 @@ end = struct
 
   let universe = ref StringSet.empty
 
-  let bottom = failwith "TODO: return the least element of the powerset lattice"
+  let bottom = StringSet.empty
 
-  let top = failwith "TODO: return the greatest element of the powerset lattice"
+  let top = !universe
 
-  let join _a _b = failwith "TODO: compute the least upper bound (union)"
+  let join a b =
+    StringSet.union a b
 
-  let meet _a _b = failwith "TODO: compute the greatest lower bound (intersection)"
+  let meet a b =
+    StringSet.inter a b
 
-  let equal _a _b = failwith "TODO: test equality of two sets"
+  let equal a b =
+    StringSet.equal a b
 
-  let to_string _s = failwith "TODO: format as {a, b, c}"
+  let to_string s =
+    let elements = StringSet.elements s in
+    "{"
+    ^ String.concat ", " elements
+    ^ "}"
 end

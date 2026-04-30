@@ -34,21 +34,40 @@ let add_edge (cfg : cfg) (src : string) (dst : string) : cfg =
      Hint: Look up both blocks in cfg.blocks using StringMap.find,
      create updated copies, and build a new blocks map with StringMap.add. *)
   ignore (cfg, src, dst);
-  failwith "TODO: add_edge"
+let src_block = StringMap.find src cfg.blocks in
+  let dst_block = StringMap.find dst cfg.blocks in
+
+  let updated_src =
+    { src_block with succs = src_block.succs @ [dst] }
+  in
+
+  let updated_dst =
+    { dst_block with preds = dst_block.preds @ [src] }
+  in
+
+  let updated_blocks =
+    cfg.blocks
+    |> StringMap.add src updated_src
+    |> StringMap.add dst updated_dst
+  in
+
+  { cfg with blocks = updated_blocks }
 
 let predecessors (cfg : cfg) (label : string) : string list =
   (* TODO: Look up the block with the given label in cfg.blocks
      and return its preds list.
      Hint: Use StringMap.find. *)
   ignore (cfg, label);
-  failwith "TODO: predecessors"
+let block = StringMap.find label cfg.blocks in
+  block.preds
 
 let successors (cfg : cfg) (label : string) : string list =
   (* TODO: Look up the block with the given label in cfg.blocks
      and return its succs list.
      Hint: Use StringMap.find. *)
   ignore (cfg, label);
-  failwith "TODO: successors"
+  let block = StringMap.find label cfg.blocks in
+  block.succs
 
 let to_string (cfg : cfg) : string =
   (* TODO: Build a human-readable string representation of the CFG.
@@ -62,4 +81,17 @@ let to_string (cfg : cfg) : string =
      Hint: Use StringMap.fold to iterate over cfg.blocks.
      Use String.concat to join lists of labels. *)
   ignore cfg;
-  failwith "TODO: to_string"
+StringMap.fold
+    (fun _ block acc ->
+      let succs_str = String.concat ", " block.succs in
+      let preds_str = String.concat ", " block.preds in
+
+      acc ^
+      Printf.sprintf
+        "Block: %s (%d stmts)\n  succs: [%s]\n  preds: [%s]\n\n"
+        block.label
+        (List.length block.stmts)
+        succs_str
+        preds_str)
+    cfg.blocks
+    ""

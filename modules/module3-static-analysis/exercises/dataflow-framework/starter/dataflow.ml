@@ -53,4 +53,91 @@ module StringMap = Map.Make (String)
 let solve (_analysis : 'a analysis)
     (_cfg : (string * string list * string list) list)
     : (string * 'a * 'a) list =
-  failwith "TODO: implement iterative fixpoint solver"
+let labels =
+    List.map (fun (label, _, _) -> label) _cfg
+  in
+
+  let in_map =
+    List.fold_left
+      (fun acc label -> StringMap.add label _analysis.init acc)
+      StringMap.empty
+      labels
+  in
+
+  let out_map =
+    List.fold_left
+      (fun acc label -> StringMap.add label _analysis.init acc)
+      StringMap.empty
+      labels
+  in
+
+  let get map label =
+    StringMap.find label map
+  in
+
+  let merge_labels map labels =
+    match labels with
+    | [] -> _analysis.init
+    | first :: rest ->
+        List.fold_left
+          (fun acc label -> _analysis.merge acc (get map label))
+          (get map first)
+          rest
+  in
+
+  let rec iterate in_map out_map =
+    let changed, new_in_map, new_out_map =
+      List.fold_left
+        (fun (changed, in_acc, out_acc) (label, preds, succs) ->
+          match _analysis.direction with
+          | Forward ->
+              let old_in = get in_acc label in
+              let old_out = get out_acc label in
+
+              let new_in = merge_labels out_acc preds in
+              let new_out = _analysis.transfer label new_in in
+
+              let block_changed =
+                not (_analysis.equal old_in new_in)
+                || not (_analysis.equal old_out new_out)
+              in
+
+              let in_acc = StringMap.add label new_in in_acc in
+              let out_acc = StringMap.add label new_out out_acc in
+
+              (changed || block_changed, in_acc, out_acc)
+
+          | Backward ->
+              let old_in = get in_acc label in
+              let old_out = get out_acc label in
+
+              let new_out = merge_labels in_acc succs in
+              let new_in = _analysis.transfer label new_out in
+
+              let block_changed =
+                not (_analysis.equal old_in new_in)
+                || not (_analysis.equal old_out new_out)
+              in
+
+              let in_acc = StringMap.add label new_in in_acc in
+              let out_acc = StringMap.add label new_out out_acc in
+
+              (changed || block_changed, in_acc, out_acc))
+        (false, in_map, out_map)
+        _cfg
+    in
+
+    if changed then
+      iterate new_in_map new_out_map
+    else
+      (new_in_map, new_out_map)
+  in
+
+  let final_in, final_out =
+    iterate in_map out_map
+  in
+
+  List.map
+    (fun label ->
+      (label, get final_in label, get final_out label))
+    labels

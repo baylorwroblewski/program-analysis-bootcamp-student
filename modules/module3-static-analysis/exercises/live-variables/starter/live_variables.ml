@@ -24,6 +24,7 @@
  *)
 
 module StringSet = Set.Make(String)
+module StringMap = Map.Make(String)
 
 (* compute_use: Extract the use set for a block.
  *
@@ -33,8 +34,11 @@ module StringSet = Set.Make(String)
  *
  * Block format: (label, defined_vars, used_vars)
  *)
-let compute_use ((_label, _defs, _uses) : string * string list * string list) : StringSet.t =
-  failwith "TODO: return StringSet of used_vars"
+let compute_use ((_label, _defs, uses) : string * string list * string list) : StringSet.t =
+  List.fold_left
+    (fun acc v -> StringSet.add v acc)
+    StringSet.empty
+    uses
 
 (* compute_def: Extract the def set for a block.
  *
@@ -45,8 +49,11 @@ let compute_use ((_label, _defs, _uses) : string * string list * string list) : 
  *
  * Block format: (label, defined_vars, used_vars)
  *)
-let compute_def ((_label, _defs, _uses) : string * string list * string list) : StringSet.t =
-  failwith "TODO: return StringSet of defined_vars"
+let compute_def ((_label, defs, _uses) : string * string list * string list) : StringSet.t =
+  List.fold_left
+    (fun acc v -> StringSet.add v acc)
+    StringSet.empty
+    defs
 
 (* analyze: Run the live variables backward iterative analysis.
  *
@@ -64,6 +71,98 @@ let compute_def ((_label, _defs, _uses) : string * string list * string list) : 
  * Returns: list of (label, in_set, out_set) triples
  *)
 let analyze
-    (_blocks : (string * string list * string list * string list) list)
+    (blocks : (string * string list * string list * string list) list)
     : (string * StringSet.t * StringSet.t) list =
-  failwith "TODO: implement backward iterative fixpoint analysis"
+
+  let labels =
+    List.map (fun (label, _, _, _) -> label) blocks
+  in
+
+  let in_map =
+    List.fold_left
+      (fun acc label -> StringMap.add label StringSet.empty acc)
+      StringMap.empty
+      labels
+  in
+
+  let get_in label map =
+    match StringMap.find_opt label map with
+    | Some s -> s
+    | None -> StringSet.empty
+  in
+
+  let union_successors succs in_map =
+    List.fold_left
+      (fun acc succ ->
+        StringSet.union acc (get_in succ in_map))
+      StringSet.empty
+      succs
+  in
+
+  let rec iterate in_map =
+    let changed, new_in_map, out_map =
+      List.fold_left
+        (fun (changed, in_acc, out_acc)
+             (label, defs, uses, succs) ->
+
+          let old_in = get_in label in_acc in
+
+          let out_set =
+            union_successors succs in_acc
+          in
+
+          let use_set =
+            compute_use (label, defs, uses)
+          in
+
+          let def_set =
+            compute_def (label, defs, uses)
+          in
+
+          let new_in =
+            StringSet.union
+              use_set
+              (StringSet.diff out_set def_set)
+          in
+
+          let changed =
+            changed || not (StringSet.equal old_in new_in)
+          in
+
+          let in_acc =
+            StringMap.add label new_in in_acc
+          in
+
+          let out_acc =
+            StringMap.add label out_set out_acc
+          in
+
+          (changed, in_acc, out_acc))
+        (false, in_map, StringMap.empty)
+        blocks
+    in
+
+    if changed then
+      iterate new_in_map
+    else
+      (new_in_map, out_map)
+  in
+
+  let final_in_map, final_out_map =
+    iterate in_map
+  in
+
+  List.map
+    (fun (label, _, _, _) ->
+      let in_set =
+        get_in label final_in_map
+      in
+
+      let out_set =
+        match StringMap.find_opt label final_out_map with
+        | Some s -> s
+        | None -> StringSet.empty
+      in
+
+      (label, in_set, out_set))
+    blocks
